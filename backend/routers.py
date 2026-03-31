@@ -210,3 +210,37 @@ def get_owners_with_specific_lastname(db: Session = Depends(get_db)):
     if result is None:
         raise HTTPException(status_code=404, detail="Таких фамилий нет")
     return create_response_with_sql(result)
+
+
+@router.get("/analytics/owners_by_surname_ova", tags=["📊 Аналитика"])
+def find_owners_by_surname(db: Session = Depends(get_db)):
+    """Найти всех владельцев, в фамилии которых заканчиваются на «ова»"""
+    result = crud.find_owners_by_surname(db)
+    if not result:
+        raise HTTPException(
+            status_code=404,
+            detail="Владельцы с фамилиями, оканчивающимися на 'ова', не найдены"
+        )
+    return create_response_with_sql(result)
+
+@router.get("/analytics/young_owners_with_max_exhibits", tags=["📊 Аналитика"])
+def get_young_owners_with_max_exhibits(db: Session = Depends(get_db)):
+    """Показать 5 самых молодых владельцев с максимальным числом экспонатов"""
+    result = crud.get_young_owners_with_max_exhibits(db)
+    if not result:
+        raise HTTPException(
+            status_code=404,
+            detail="Данные о владельцах не найдены"
+        )
+    return create_response_with_sql(result)
+
+@router.get("/analytics/roi_by_exhibit_type", tags=["📊 Аналитика"])
+def calculate_roi_by_exhibit_type(db: Session = Depends(get_db)):
+    """Рассчитать ROI по типам экспонатов для оптимизации рекламных бюджетов"""
+    result = crud.calculate_roi_by_exhibit_type(db)
+    if not result:
+        raise HTTPException(
+            status_code=404,
+            detail="Данные для расчета ROI не найдены"
+        )
+    return create_response_with_sql(result)
