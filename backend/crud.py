@@ -192,3 +192,83 @@ def get_owners_with_specific_lastname(db: Session):
         for r in result
     ]
 
+def find_owners_by_surname(db: Session):
+    """Найти всех владельцев, в фамилии которых заканчиваются на «ова»"""
+    result = (
+        db.query(
+            models.Owner.id,
+            models.Owner.last_name,
+            models.Owner.first_name,
+            models.Owner.email
+        )
+        .filter(models.Owner.last_name.like('%ова'))
+        .all()
+    )
+
+    return [
+        {
+            "id": r[0],
+            "last_name": r[1],
+            "first_name": r[2],
+            "email": r[3]
+        }
+        for r in result
+    ]
+
+def get_young_owners_with_max_exhibits(db: Session):
+    """Показать 5 самых молодых владельцев с максимальным числом экспонатов"""
+    result = (
+        db.query(
+            models.Wing.owner_id,
+            func.count(models.Wing.owner_id).label('exhibits_count'),
+            models.Owner.last_name,
+            models.Owner.first_name,
+            models.Owner.birth_date
+        )
+        .join(models.Owner, models.Wing.owner_id == models.Owner.id)
+        .group_by(models.Wing.owner_id)
+        .order_by(
+            func.count(models.Wing.owner_id).desc(),
+            models.Owner.birth_date.desc()
+        )
+        .limit(5)
+        .all()
+    )
+
+    return [
+        {
+            "owner_id": r[0],
+            "exhibits_count": r[1],
+            "last_name": r[2],
+            "first_name": r[3],
+            "birth_date": r[4]
+        }
+        for r in result
+    ]
+
+def calculate_roi_by_exhibit_type(db: Session):
+    """Рассчитать ROI по типам экспонатов для оптимизации рекламных бюджетов"""
+    result = (
+        db.query(
+            models.Wing.type_id,
+            models.Type.name.label('type_name'),
+            func.avg(models.Wing.profit).label('avg_profit'),
+            func.sum(models.Move.price + models.Wing.profit + models.Place.scale).label('total_revenue')
+        )
+        .join(models.Move, models.Wing.id == models.Move.wing_id)
+        .join(models.Place, models.Place.id == models.Move.place_id)
+        .join(models.Type, models.Type.id == models.Wing.type_id)
+        .group_by(models.Wing.type_id, models.Type.name)
+        .order_by(func.sum(models.Move.price + models.Wing.profit + models.Place.scale).desc())
+        .all()
+    )
+
+    return [
+        {
+            "type_id": r[0],
+            "type_name": r[1],
+            "avg_profit": r[2],
+            "total_revenue": r[3]
+        }
+        for r in result
+    ]
